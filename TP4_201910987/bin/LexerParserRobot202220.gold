@@ -1,0 +1,149 @@
+using gold.**
+
+toSet(C) :=  {x|  x in C}
+
+///====   mini Parser===
+
+function createParser():IPushdownAutomaton begin
+	Q:=(0‥8) ∪ (50‥66) ∪ (100‥101) ∪ {1000}
+	Σ:=('A'‥'Z')  ∪ {' ', '\n', '(', ')', '{', '}', ',', ';', '.', '='}
+	Γ:={'$', '1', '2'}
+	q₀:= 0
+	F:= {101}
+	M:=GPushdownAutomaton(Q,Σ,Γ,q₀,F)
+	
+SkipChars := {' ', '\n'}   // this will only  be used when testing only the parser as the lexer removes  SkipChars
+
+	M.delta(0,1,"K").ignore()
+	M.delta(1,2,"O").ignore()
+	M.delta(2,3,"E").ignore()
+	M.delta(3,4,"O").ignore()
+	M.delta(4,5,"{").push("$")
+	M.delta(5,6,"O").ignore()
+	M.delta(5,100,"}").ignore()
+	M.delta(6,7,"V").ignore()
+	M.delta(6,50,"(").push("1")
+	M.delta(7,8,";").ignore()
+	M.delta(8,6,"O").ignore()
+	
+	M.delta(50,51,"O").ignore()
+	M.delta(50,53,")").pop("1")
+	M.delta(51,52,"V").ignore()
+	M.delta(52,50,",").ignore()
+	M.delta(52,53,")").pop("1") 
+	M.delta(53,54,"{").push("2")
+	M.delta(54,55,"S();").ignore()
+	M.delta(55,57,"T.V=V;").ignore() 
+	M.delta(55,56,"}").pop("2") 
+	M.delta(56,100,"}").ignore() 
+	M.delta(56,58,"OV(").push("1")
+	M.delta(57,55,"T.V=V;").ignore()
+	M.delta(57,56,"}").pop("2")
+	
+	M.delta(58,59,")").pop("1")
+	
+	M.delta(58,1000,"OV").ignore() 
+	M.delta(1000,58,",").ignore() 
+	M.delta(1000,59,")").pop("1")
+	M.delta(59,60,"{").push("2")
+	M.delta(60,61,"RNO(").push("1")
+	
+	M.delta(61,64,")").pop("1")
+	M.delta(61,62,"V").ignore()
+	M.delta(61,62,"T.V").ignore()
+	M.delta(62,63,",").ignore()
+	M.delta(62,64,")").pop("1")
+	M.delta(63,62,"V").ignore()
+	M.delta(63,62,"T.V").ignore()
+	
+	M.delta(64,65,";").ignore()
+	M.delta(65,66,"}").pop("2")
+	M.delta(66,100,"}").ignore()
+	
+	M.delta(100,101,"").pop("$")
+	
+
+
+ // this will only  be used when testing only the parser as the lexer removes  SkipChars
+ 
+ for each q in Q do
+ 	for each s in SkipChars do
+ 	   M.delta(q,q,λ+s).ignore()
+ end
+ end
+
+
+return M
+end
+ 
+chars(string) :=  {string.charAt(i)| 0 <= i <string.length() }
+charsStrings(strings) := (∪ s | s ∈ strings: chars(s) )
+elements(array) :=  {array[i]| 0 <= i < |array| }
+get1(⟨r,i⟩):= r
+get2(⟨r,i⟩):= i
+  
+   
+var parser:GPushdownAutomaton
+
+procedure main(args:String[]) begin
+    currentString := λ
+    
+    parser = createParser()
+	 
+	 
+	 //testLexer(lexer)
+	 GAutomataFrame.show(parser)
+   
+	 
+	 
+	 testLexerParser(parser)
+end
+  
+  
+procedure testLexerParser(P:IPushdownAutomaton) begin
+	var sc:java.util.Scanner(System.$in)
+   	var string:String	
+ 	inputP = elements(P.getInputAlphabet())
+    
+    
+	input = ""
+		
+		
+	print "----------------------------"
+	print "Enter one or more lines. End with a single line with $"
+   	print "If you want to stop testing, enter EXIT"
+   	string:=sc.nextLine() 
+       
+
+
+
+	while string != "EXIT" do
+		
+	   string := string + "  \n "	
+       input := ""
+       while string.charAt(0) != '$' do
+              input := input + string 
+              string:=sc.nextLine() + " \n "
+       stringOut:= ""
+		 	if chars(input) ⊆ inputP then
+            		ok:=P.acceptsString(input)
+         				print "Parser result: "+(ok?"accepted ":"rejected ")
+		
+		   else print "Input contains invalid characters: "+ (chars(input) \ inputP)
+	end	
+	end
+       	print "----------------------------"
+	
+	   print "Enter one or more lines. End with a single line with $"
+       print "If you want to stop testing, enter EXIT"
+       string:=sc.nextLine()
+       
+end
+print  "Good bye"
+print  ""
+
+end 
+
+
+
+
